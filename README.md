@@ -17,7 +17,7 @@ ideas:
 - understand why either branch of patch (if zero, free arrCMAP else assign) is taken
 
 - figure out type of arguments for JP2KImageInitDecoder, build WinAFL harness:
-[ ] find how JP2KImageInitDecoder is used by acrobat with API monitor:
+- [x] find how JP2KImageInitDecoder is used by acrobat with API monitor:
  
 ```
 JP2KLibInitEx(MemObj *obj)
@@ -42,20 +42,16 @@ struct struct_unk_1 {
 ```
 - JP2KStreamProcsEx (array of functions for working with stream)
 
-- arguments too complex to emulate through harness, workaround:
-o emulate JP2KCodeStm - hook all method calls:
-    > 
-o emulate MemObj crap - hook alloc_1 and free_1:
-    > works ok in Frida, reimplement in DynamoRIO with drwrap
-
-[ ] build harness invoking JP2KImageInitDecoder	
-[ ] gather JPEG2000 corpus from old reports
-    - https://github.com/uclouvain/openjpeg-data
-[ ] fuzzer dictionary for JP2K
+- [x] build harness invoking JP2KImageInitDecoder	
+- [x] emulate & test required functionality (JP2KCodeStm & MemObj) w/ Frida prototype (frida_harness.js)
+- [ ] reimplement emulation either in DynamoRio or scratch
+- [ ] gather JPEG2000 corpus from old reports
+    - also https://github.com/uclouvain/openjpeg-data
+- [ ] fuzzer dictionary for JP2K
     - investigate pdf_jpx_fuzzer.cc in libFuzzer
-[ ] test case generation using JP2K grammar/format aware generator
-[ ] look into distributing fuzzer across purpose built fuzz VMs
-[ ] reverse then fuzz individual box handlers
+- [ ] test case generation using JP2K grammar/format aware generator
+- [ ] look into distributing fuzzer across purpose built fuzz VMs
+- [ ] reverse then fuzz individual box handlers
 
 ```
 // called from Acrobat/Reader
