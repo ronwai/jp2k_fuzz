@@ -26,8 +26,7 @@ DecOpt *opt = JP2KDecOptCreate()
 JP2KDecOptInitToDefaults(opt)
 Image *img = JP2KImageCreate()
 JP2KImageInitDecoderEx(img, struct_unk_1, JP2KStreamProcsEx*, opt, struct_unk_3)
-```
-```
+
 struct struct_unk_1 {
   DWORD jp2k_size
   DWORD unk_1
@@ -42,17 +41,24 @@ struct struct_unk_1 {
 ```
 - JP2KStreamProcsEx (array of functions for working with stream)
 
+## building harness & instrumentation
 - [x] build harness invoking JP2KImageInitDecoder	
 - [x] emulate & test required functionality (JP2KCodeStm & MemObj) w/ Frida prototype (frida_harness.js)
 - [ ] reimplement emulation either in DynamoRio or scratch
+
+## prepare for fuzzing
 - [ ] gather JPEG2000 corpus from old reports
     - also https://github.com/uclouvain/openjpeg-data
+    
+## optimize fuzzing
 - [ ] fuzzer dictionary for JP2K
     - investigate pdf_jpx_fuzzer.cc in libFuzzer
 - [ ] test case generation using JP2K grammar/format aware generator
 - [ ] look into distributing fuzzer across purpose built fuzz VMs
 - [ ] reverse then fuzz individual box handlers
 
+
+## misc 
 ```
 // called from Acrobat/Reader
 + jp2k_dec_image()
