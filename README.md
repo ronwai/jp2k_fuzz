@@ -19,14 +19,15 @@ ideas:
 - figure out type of arguments for JP2KImageInitDecoder, build WinAFL harness:
 [ ] find how JP2KImageInitDecoder is used by acrobat with API monitor:
  
-`JP2KLibInitEx(MemObj *obj)
+```
+JP2KLibInitEx(MemObj *obj)
 MemObj *obj = JP2KGetMemObjEx()
 DecOpt *opt = JP2KDecOptCreate()
 JP2KDecOptInitToDefaults(opt)
 Image *img = JP2KImageCreate()
 JP2KImageInitDecoderEx(img, struct_unk_1, JP2KStreamProcsEx*, opt, struct_unk_3)
-`
-`
+```
+```
 struct struct_unk_1 {
   DWORD jp2k_size
   DWORD unk_1
@@ -38,7 +39,7 @@ struct struct_unk_1 {
   DWORD unk_7
   JP2KStreamProcsEx *unk_8 
 }
-`
+```
 - JP2KStreamProcsEx (array of functions for working with stream)
 
 - arguments too complex to emulate through harness, workaround:
@@ -56,7 +57,7 @@ o emulate MemObj crap - hook alloc_1 and free_1:
 [ ] look into distributing fuzzer across purpose built fuzz VMs
 [ ] reverse then fuzz individual box handlers
 
-`
+```
 // called from Acrobat/Reader
 + jp2k_dec_image()
 |   + jp2k_lib_init_ex()
@@ -98,9 +99,9 @@ o emulate MemObj crap - hook alloc_1 and free_1:
 |   + JP2KDecOptDestroy()
 |   + JP2KImageDestroy()
 |   + free() ... [21]
-`
+```
 
-`
+```
 JP2KCodeStm::JP2KCodeStm(void)
 JP2KCodeStm::~JP2KCodeStm(void)
 JP2KCodeStm::operator=(JP2KCodeStm const &)
@@ -122,8 +123,8 @@ JP2KCodeStm::flushWriteBuffer(void)
 JP2KCodeStm::read(uchar *outBuf, int nCount) - read nCount bytes from stream into outBuf, returns num bytes read
 JP2KCodeStm::seek(int flag, __int64 pos) - seek to pos, returns current pos
 JP2KCodeStm::write(uchar *,int)
-`
-`
+```
+```
 struct struct_MemObjEx {
     int (__cdecl *init_something)(int);
     int (__cdecl *get_something)(int);
@@ -134,8 +135,8 @@ struct struct_MemObjEx {
     int (__cdecl *memcpy_memset)(int dest, int src, int size);
     int (__cdecl *memset_wrapper)(int dest, int val, int size);
 }
-`
-`
+```
+```
 struct __declspec(align(4)) JP2KCodeStm
 {
   _DWORD len1;
@@ -154,4 +155,4 @@ struct __declspec(align(4)) JP2KCodeStm
   _DWORD endWriteBuf;
   _DWORD posWriteBuf;
 };
-`
+```
