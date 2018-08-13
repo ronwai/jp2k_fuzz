@@ -44,7 +44,7 @@ struct struct_unk_1 {
 ## building harness & instrumentation
 - [x] build harness invoking JP2KImageInitDecoder	
 - [x] emulate & test required functionality (JP2KCodeStm & MemObj) w/ Frida prototype (frida_harness.js)
-- [ ] reimplement emulation either in DynamoRio or scratch
+- [x] reimplement emulation either in DynamoRio or Detours (went with this option)
 
 ## prepare for fuzzing
 - [ ] gather JPEG2000 corpus from old reports
