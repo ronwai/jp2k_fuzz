@@ -50,6 +50,7 @@ struct struct_unk_1 {
 - [x] gather JPEG2000 corpus from old reports
 - [x] jp2 files from https://github.com/uclouvain/openjpeg-data & use opj_compress to convert non-jp2 files into jp2
 - [ ] https://github.com/mdadams/jasper/tree/master/data/test + opj_compress
+- [ ] https://github.com/openpreserve/jpylyzer
 - [ ] corpus minimization
     
 ## optimize fuzzing
