@@ -47,9 +47,9 @@ struct struct_unk_1 {
 - [x] reimplement emulation either in DynamoRio or Detours (went with this option)
 
 ## prepare for fuzzing
-- [ ] gather JPEG2000 corpus from old reports
-- [ ] jp2 files from https://github.com/uclouvain/openjpeg-data
-- [ ] build & use opj_compress to convert non-jp2 files into jp2
+- [x] gather JPEG2000 corpus from old reports
+- [x] jp2 files from https://github.com/uclouvain/openjpeg-data & use opj_compress to convert non-jp2 files into jp2
+- [ ] https://github.com/mdadams/jasper/tree/master/data/test + opj_compress
 - [ ] corpus minimization
     
 ## optimize fuzzing
