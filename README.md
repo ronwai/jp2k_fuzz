@@ -48,7 +48,8 @@ struct struct_unk_1 {
 
 ## prepare for fuzzing
 - [ ] gather JPEG2000 corpus from old reports
-    - also https://github.com/uclouvain/openjpeg-data
+- [ ] https://github.com/uclouvain/openjpeg-data
+- [ ] corpus minimization
     
 ## optimize fuzzing
 - [ ] fuzzer dictionary for JP2K
