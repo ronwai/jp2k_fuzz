@@ -74,4 +74,4 @@ fuzz_jp2k(argv[1]);
 ```
 Once we compile our corpus and minimize it while maximizing coverage, we achieve decent performance with WinAFL and even manage to find a bug (CVE-2019-7794).
 
-Unfortunately for me, Checkpoint was doing all of this and more at the same time: https://research.checkpoint.com/2018/50-adobe-cves-in-50-days/. That research was published a few months after I had written all of this. ¯\_(ツ)_/¯
+Unfortunately for me, Checkpoint was doing all of this and more at the same time: https://research.checkpoint.com/2018/50-adobe-cves-in-50-days/. That research was published a few months after I had written all of this. ¯\\_(ツ)_/¯
