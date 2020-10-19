@@ -13,7 +13,7 @@ JP2KDecOptInitToDefaults(opt);
 Image *img = JP2KImageCreate();
 JP2KImageInitDecoderEx(img, struct_unk_1, JP2KStreamProcsEx*, opt, struct_unk_3);
 ```
-You might be wondering where the JPEG2000 image data is passed in. Perhaps through JP2KImageCreate? Nope, that's where the parsed data is written. What actually happens is that Acrobat reads the data from the PDF and initializes a stream object called `JP2KCodeStm` that `JP2KImageInitDecoderEx` reads during its decoding process. Luckily for us, there exist some symbols in the DLL. We can then use the [frida_trace.js](frida_trace.js) script to identify which methods are called during ordinary image decoding. Once we know what we need to stub, we perform some quick reversing of them:
+You might be wondering where the JPEG2000 image data is passed in. Perhaps through JP2KImageCreate? Nope, that's where the parsed data is written. What actually happens is that Acrobat reads the data from the PDF and initializes a stream object called `JP2KCodeStm` that `JP2KImageInitDecoderEx` reads during its decoding process. Luckily for us, there exist some symbols for it in the DLL. We then use the [frida_trace.js](frida_trace.js) script to identify which of its methods are called during ordinary image decoding. Once we know what we need to stub, we perform some quick reversing:
 ```
 JP2KCodeStm::InitJP2KCodeStm(unsigned __int64,int,void *,JP2KStreamProcsEx *,JP2KStmOpenMode,int)
 JP2KCodeStm::GetCurPos(void) - returns current pos (+28)
@@ -72,4 +72,4 @@ fuzz_jp2k(argv[1]);
 ```
 Once we compile our corpus and minimize it while maximizing coverage, we achieve decent performance with WinAFL and even manage to find a bug (CVE-2019-7794).
 
-Unfortunately for me, Checkpoint was doing all of this and more at the same time: https://research.checkpoint.com/2018/50-adobe-cves-in-50-days/. That research was published a few months after I had written this harness. ¯\_(ツ)_/¯
+Unfortunately for me, Checkpoint was doing all of this and more at the same time: https://research.checkpoint.com/2018/50-adobe-cves-in-50-days/. That research was published a few months after I had written all of this. ¯\_(ツ)_/¯
