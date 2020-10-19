@@ -34,7 +34,7 @@ case "?read@JP2KCodeStm@@QAEHPAEH@Z":
     }, 'int', ['pointer', 'int'], 'stdcall'));
     break;
 ```
-Provided our reversed implementation is correct, this should work right? But it doesn't. We're missing one more thing - the decoding function uses `MemObj` for memory management which in turn uses Acrobat's own memory management primitives. Since we've calling into the DLL directly, we don't have these available so the decoding fails. We have to emulate `MemObj` ourselves and register it through `JP2KLibInitEx`. We start by reversing the MemObjEx struct:
+Provided our reversed implementation is correct, this should work right? But it doesn't. We're missing one more thing - the decoding function uses `MemObj` for memory management which in turn uses Acrobat's own memory management primitives. Since we're calling into the DLL directly, we don't have these available so the decoding fails. We have to emulate `MemObj` ourselves and register it through `JP2KLibInitEx`. We start by reversing the MemObjEx struct:
 ```cpp
 struct MemObjEx
 {
