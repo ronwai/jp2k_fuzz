@@ -1,163 +1,75 @@
-# jp2k
+# jp2k_fuzz
 
-- jp2 header box (jp2h)
-- image header box (ihdr) : specifies the size of the image and other related fields.
-- component mapping box (cmap) :  specifies the mapping between a palette and codestream components
-- palette box (pclr) : specifies the palette which maps a single component in index space to a multiple-component image.
+This repository contains a harness that can be used with WinAFL to fuzz Acrobat's JPEG2000 library. It was used to find CVE-2019-7794.
 
-bug (half initialized state due to bailout):
-- parses CMAP box but does not clean state
-- when PCLR box is encountered, CMAP array counter overwritten then invalid parameter
-  causes parser to bail.
-- in clean up procedure, the overwritten counter is used for the CMAP array without
-  bounds checks, causing out of bounds free.
-  
-ideas:
-- look in other superbox/box handlers for similar bailout bugs
-- understand why either branch of patch (if zero, free arrCMAP else assign) is taken
+## Details
 
-- figure out type of arguments for JP2KImageInitDecoder, build WinAFL harness:
-- [x] find how JP2KImageInitDecoder is used by acrobat with API monitor:
- 
+JP2KLib.dll is a closed source DLL that is used by Adobe Acrobat to decode JPEG2000 images. Since it's a binary with no source code, its exports have an unknown API. Our goal is to invoke the exported functions properly and get the library to decode our image independently of Acrobat. Before we can invoke the exported functions, we need to observe how they're used by the application and we can do that through API Monitor. Doing so shows us the following sequence of calls:
+```cpp
+JP2KLibInitEx(MemObj *obj);
+MemObj *obj = JP2KGetMemObjEx();
+DecOpt *opt = JP2KDecOptCreate();
+JP2KDecOptInitToDefaults(opt);
+Image *img = JP2KImageCreate();
+JP2KImageInitDecoderEx(img, struct_unk_1, JP2KStreamProcsEx*, opt, struct_unk_3);
 ```
-JP2KLibInitEx(MemObj *obj)
-MemObj *obj = JP2KGetMemObjEx()
-DecOpt *opt = JP2KDecOptCreate()
-JP2KDecOptInitToDefaults(opt)
-Image *img = JP2KImageCreate()
-JP2KImageInitDecoderEx(img, struct_unk_1, JP2KStreamProcsEx*, opt, struct_unk_3)
-
-struct struct_unk_1 {
-  DWORD jp2k_size
-  DWORD unk_1
-  DWORD unk_2
-  DWORD unk_3
-  DWORD unk_4
-  DWORD unk_5
-  struct_unk_4 *unk_6
-  DWORD unk_7
-  JP2KStreamProcsEx *unk_8 
-}
+You might be wondering where the JPEG2000 image data is passed in. Perhaps through JP2KImageCreate? Nope, that's where the parsed data is written. What actually happens is that Acrobat reads the data from the PDF and initializes a stream object called `JP2KCodeStm` that `JP2KImageInitDecoderEx` reads during its decoding process. Luckily for us, there exist some symbols in the DLL. We can then use the [frida_trace.js](frida_trace.js) script to identify which methods are called during ordinary image decoding. Once we know what we need to stub, we perform some quick reversing of them:
 ```
-- JP2KStreamProcsEx (array of functions for working with stream)
-
-## building harness & instrumentation
-- [x] build harness invoking JP2KImageInitDecoder	
-- [x] emulate & test required functionality (JP2KCodeStm & MemObj) w/ Frida prototype (frida_harness.js)
-- [x] reimplement emulation either in DynamoRio or Detours (went with this option)
-
-## prepare for fuzzing
-- [x] gather JPEG2000 corpus from old reports
-- [x] jp2 files from https://github.com/uclouvain/openjpeg-data & use opj_compress to convert non-jp2 files into jp2
-- [x] https://github.com/mdadams/jasper/tree/master/data/test + opj_compress
-- [x] corpus minimization
-- [ ] write script to pull all jp2 files from github then minimize
-    
-## optimize fuzzing
-- [ ] fuzzer dictionary for JP2K
-    - investigate pdf_jpx_fuzzer.cc in libFuzzer
-- [ ] test case generation using JP2K grammar/format aware generator
-- [ ] look into distributing fuzzer across purpose built fuzz VMs
-- [ ] reverse then fuzz individual box handlers
-
-
-## misc 
-```
-// called from Acrobat/Reader
-+ jp2k_dec_image()
-|   + jp2k_lib_init_ex()
-|   |   + sub_60026810() ... [20]
-|   |   + JP2KLibInitEx()
-|   + JP2KGetMemObjEx()
-|   + sub_60035860() ... [11]
-|   + sub_6020DD00() ... [79]
-|   + sub_60026810() ... [21]
-|   + memset() ... [2]
-|   + JP2KDecOptCreate()
-|   + JP2KDecOptInitToDefaults()
-|   + JP2KImageCreate()
-|   + JP2KImageInitDecoderEx()
-|   + sub_60630DF0()
-|   + JP2KImageGetGeometryParams()
-|   + JP2KImageGeometryGetParams()
-|   + sub_606302E0()
-|   + sub_60631110()
-|   |   + JP2KImageGetColorSpecList()
-|   |   + sub_6002D870() ... [6]
-|   |   + sub_60043674()
-|   |   |   + memcpy() ... [8]
-|   |   |   + sub_6003C983()
-|   |   |   |   + memset() ... [3]
-|   |   + JP2KImageGetGeometryParams() ... [2]
-|   |   + JP2KImageGeometryGetParams() ... [2]
-|   |   + JP2KImagePalettePresent()
-|   |   + JP2KImageGetPalette()
-|   |   + memcpy() ... [9]
-|   |   + memset() ... [4]
-|   |   + sub_60630E60()
-|   |   |   + JP2KImageGetGeometryParams() ... [3]
-|   |   |   + JP2KImageGeometryGetParams() ... [3]
-|   |   |   + JP2KImageGetComponentType()
-|   + JP2KImageGlobalTransparencyChannelPresent() ****
-|   + JP2KImageGetGlobalTransparencyChannelNum() ****
-|   + JP2KImageGetComponentType() ... [2] ****
-|   + JP2KDecOptDestroy()
-|   + JP2KImageDestroy()
-|   + free() ... [21]
-```
-
-```
-JP2KCodeStm::JP2KCodeStm(void)
-JP2KCodeStm::~JP2KCodeStm(void)
-JP2KCodeStm::operator=(JP2KCodeStm const &)
-JP2KCodeStm::Die(void)
-JP2KCodeStm::GetCurPos(void) - returns current pos (+28)
-JP2KCodeStm::GetOpenMode(void)
-JP2KCodeStm::GetStmBase(void)
-JP2KCodeStm::GetStmProcs(void)
-JP2KCodeStm::GetTotalLength(void)
 JP2KCodeStm::InitJP2KCodeStm(unsigned __int64,int,void *,JP2KStreamProcsEx *,JP2KStmOpenMode,int)
-JP2KCodeStm::IsReadable(void)
+JP2KCodeStm::GetCurPos(void) - returns current pos (+28)
 JP2KCodeStm::IsSeekable(void) - returns 1
-JP2KCodeStm::IsWritable(void)
-JP2KCodeStm::ReadOnly(void)
-JP2KCodeStm::StmLengthUnknown(void)
-JP2KCodeStm::TellPos(void)
-JP2KCodeStm::WriteOnly(void)
-JP2KCodeStm::flushWriteBuffer(void)
 JP2KCodeStm::read(uchar *outBuf, int nCount) - read nCount bytes from stream into outBuf, returns num bytes read
 JP2KCodeStm::seek(int flag, __int64 pos) - seek to pos, returns current pos
-JP2KCodeStm::write(uchar *,int)
 ```
+Now that we know how `JP2KImageInitDecoderEx` reads data from the stream we can detour the above functions to read/seek from our buffer containing JPEG2000 data! We use [adobe_jp2k.py](adobe_jp2k.py) to read our JPEG2000 image and insert the bytes as an array in our [frida_harness.js](frida_harness.js) script. This script will attempt to emulate the above functions, e.g. for JP2KCodeStm::read:
+```js
+case "?read@JP2KCodeStm@@QAEHPAEH@Z":
+    Interceptor.replace(exports[i].address, new NativeCallback(function(outBuf, nCount) {
+        console.log('[i] JP2KCodeStm::read() - writing ' + nCount + ' bytes to ' + outBuf + ' curpos=' + curPos);
+        var readBytes = jp2kBytes.slice(curPos, curPos + nCount);
+        curPos += nCount;
+        Memory.writeByteArray(outBuf, readBytes);
+        dumpAddr('read()', outBuf, nCount);
+        return readBytes.length;
+    }, 'int', ['pointer', 'int'], 'stdcall'));
+    break;
 ```
-struct struct_MemObjEx {
-    int (__cdecl *init_something)(int);
-    int (__cdecl *get_something)(int);
-    int (__cdecl *not_impl)();
-    int (__cdecl *free_2)(int);
-    int (__cdecl *malloc_1)(int);
-    int (__cdecl *free_1)(int);
-    int (__cdecl *memcpy_memset)(int dest, int src, int size);
-    int (__cdecl *memset_wrapper)(int dest, int val, int size);
-}
-```
-```
-struct __declspec(align(4)) JP2KCodeStm
+Provided our reversed implementation is correct, this should work right? But it doesn't. We're missing one more thing - the decoding function uses `MemObj` for memory management which in turn uses Acrobat's own memory management primitives. Since we've calling into the DLL directly, we don't have these available so the decoding fails. We have to emulate `MemObj` ourselves and register it through `JP2KLibInitEx`. We start by reversing the MemObjEx struct:
+```cpp
+struct MemObjEx
 {
-  _DWORD len1;
-  _DWORD len2;
-  _BYTE gap0[8];
-  _DWORD readOnly;
-  _DWORD writeOnly;
-  _DWORD stmBase;
-  _DWORD dword1C;
-  _DWORD openMode;
-  _DWORD stmFuncs;
-  _DWORD curPos;
-  _DWORD overflowThing;
-  _DWORD dword30;
-  _DWORD writeBuffer;
-  _DWORD endWriteBuf;
-  _DWORD posWriteBuf;
+	int(__cdecl *init_something)(int);
+	int(__cdecl *get_something)(int);
+	int(__cdecl *not_impl)();
+	void(__cdecl *free_2)(void *);
+	void *(__cdecl *malloc_1)(int);
+	void(__cdecl *free_1)(void *);
+	void *(__cdecl *memcpy_memset)(void *dest, void *src, int size);
+	void *(__cdecl *memset_wrapper)(void *dest, int val, int size);
 };
 ```
+At this point we write our C++ harness where we can (mostly) route the above methods to whatever heap we have available. Our final harness has the following high-level logic:
+```c++
+// Load our target library
+HINSTANCE JP2KLib = LoadLibrary(L"JP2KLib.dll");
+
+// Obtain references to the exported functions we're interested in
+libInit = (JP2KLibInitEx)GetProcAddress(JP2KLib, (LPCSTR)185);
+imgCreate = (JP2KImageCreate)GetProcAddress(JP2KLib, (LPCSTR)58);
+decOptCreate = (JP2KDecOptCreate)GetProcAddress(JP2KLib, (LPCSTR)43);
+decOptInit = (JP2KDecOptInitToDefaults)GetProcAddress(JP2KLib, (LPCSTR)45);
+decode = (JP2KImageInitDecoderEx)GetProcAddress(JP2KLib, (LPCSTR)157);
+
+// Use Detours to hook the JP2KCodeStm methods above to return data from our file buffer
+hook_jp2kstm();
+
+// Init our fake MemObj with JP2KImageInitDecoderEx 
+hook_memobj();
+
+// WinAFL will pass the filename of the mutated data through argv
+// This function will initialize a JP2KCodeStm from the file and attempt to decode the image 
+fuzz_jp2k(argv[1]);
+```
+Once we compile our corpus and minimize it while maximizing coverage, we achieve decent performance with WinAFL and even manage to find a bug (CVE-2019-7794).
+
+Unfortunately for me, Checkpoint was doing all of this and more at the same time: https://research.checkpoint.com/2018/50-adobe-cves-in-50-days/. That research was published a few months after I had written this harness. ¯\_(ツ)_/¯
