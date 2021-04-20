@@ -286,12 +286,12 @@ for (var i = 0; i < exports.length; i++) {
                     console.log('[i] JP2KCodeStm::seek() - flag=' + flag + ' pos=' + pos);
                     switch (flag) {
                         case 0:
-							// relative seek
+                            // relative seek
                             curPos += pos;
                             break;
                         case 1:
                             // absolute seek
-							curPos = pos;
+                            curPos = pos;
                             break;
                         case 2:
                             break;

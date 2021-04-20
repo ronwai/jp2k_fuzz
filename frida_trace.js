@@ -39,11 +39,11 @@ for (var i = 0; i < exports.length; i++) {
     if (ind !== -1) {
         console.log(exports[i].name);
         switch (exports[i].name) {
-			case "?InitJP2KCodeStm@JP2KCodeStm@@QAEH_KHPAXPAUJP2KStreamProcsEx@@W4JP2KStmOpenMode@@H@Z":
-				Interceptor.attach(exports[i].address, {
+            case "?InitJP2KCodeStm@JP2KCodeStm@@QAEH_KHPAXPAUJP2KStreamProcsEx@@W4JP2KStmOpenMode@@H@Z":
+                Interceptor.attach(exports[i].address, {
                     onLeave: function(ret) { console.log('[i] JP2KCodeStm::Init() - ret=' + ret); }
-				});
-				break;
+                });
+                break;
             case "?read@JP2KCodeStm@@QAEHPAEH@Z":
                 Interceptor.attach(exports[i].address, {
                     onEnter: function(args) { this.arg_0 = args[0]; this.arg_1 = args[1]; },
@@ -68,12 +68,12 @@ for (var i = 0; i < exports.length; i++) {
                         console.log('[i] JP2KCodeStm::seek() - flag=' + this.arg_0 + ' pos=' + this.arg_1 + ' ret=' + retval);
                     }
                 });
-				break;
-			case "?IsSeekable@JP2KCodeStm@@QAE_NXZ":
-				Interceptor.attach(exports[i].address, {
+                break;
+            case "?IsSeekable@JP2KCodeStm@@QAE_NXZ":
+                Interceptor.attach(exports[i].address, {
                     onLeave: function(retval) { console.log('[i] JP2KCodeStm::IsSeekable(): ret=' + retval); }
-				});
-				break;
+                });
+                break;
             default:
                 Interceptor.attach(exports[i].address, {
                     onEnter: generateOnEnter(jp2k_code_stm_methods[ind]),
@@ -99,57 +99,57 @@ var memObjMemset = resolveAddress(jp2kBase, '0x10067203');
 var memObjNotImpl = resolveAddress(jp2kBase, '0x10067283');
 
 Interceptor.attach(memObjAlloc1, {
-	onEnter: function(args) {
-		console.log('[i] memObjAlloc1: allocating ' + args[0] + ' * ' + args[1]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjAlloc1: allocating ' + args[0] + ' * ' + args[1]);
+    }
 });
 
 Interceptor.attach(memObjAlloc2, {
-	onEnter: function(args) {
-		console.log('[i] memObjAlloc2: allocating ' + args[0]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjAlloc2: allocating ' + args[0]);
+    }
 });
 
 Interceptor.attach(memObjFree1, {
-	onEnter: function(args) {
-		console.log('[i] memObjFree1: freeing ' + args[0]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjFree1: freeing ' + args[0]);
+    }
 });
 
 Interceptor.attach(memObjFree2, {
-	onEnter: function(args) {
-		console.log('[i] memObjFree2: freeing ' + args[0]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjFree2: freeing ' + args[0]);
+    }
 });
 
 Interceptor.attach(memObjInitSomething, {
-	onEnter: function(args) {
-		console.log('[i] memObjInitSomething: size ' + args[0]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjInitSomething: size ' + args[0]);
+    }
 });
 
 Interceptor.attach(memObjGetSomething, {
-	onEnter: function(args) {
-		console.log('[i] memObjGetSomething: size ' + args[0]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjGetSomething: size ' + args[0]);
+    }
 });
 
 Interceptor.attach(memObjMemcpyMemset, {
-	onEnter: function(args) {
-		console.log('[i] memObjMemcpyMemset: dest: ' + args[0] + ' src: ' + args[1] + ' size: ' + args[2]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjMemcpyMemset: dest: ' + args[0] + ' src: ' + args[1] + ' size: ' + args[2]);
+    }
 });
 
 Interceptor.attach(memObjMemset, {
-	onEnter: function(args) {
-		console.log('[i] memObjMemset: dest: ' + args[0] + ' val: ' + args[1] + ' size: ' + args[2]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjMemset: dest: ' + args[0] + ' val: ' + args[1] + ' size: ' + args[2]);
+    }
 });
 
 Interceptor.attach(memObjNotImpl, {
-	onEnter: function(args) {
-		console.log('[i] memObjNotImpl: a: ' + args[0] + ' b: ' + args[1]);
-	}
+    onEnter: function(args) {
+        console.log('[i] memObjNotImpl: a: ' + args[0] + ' b: ' + args[1]);
+    }
 });
 
 
@@ -158,7 +158,7 @@ Interceptor.attach(memObjNotImpl, {
 /* ==== */
 
 Interceptor.attach(resolveAddress(jp2kBase, '0x10040814'), {
-	onEnter: function(args) { console.log('[i] entered big_jp2k'); },
+    onEnter: function(args) { console.log('[i] entered big_jp2k'); },
     onLeave: function(ret) { console.log('[i] big_jp2k:: ret=' + ret); }	
 });
 

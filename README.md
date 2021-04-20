@@ -23,7 +23,7 @@ JP2KCodeStm::seek(int flag, __int64 pos) - seek to pos, returns current pos
 ```
 Now that we know how `JP2KImageInitDecoderEx` reads data from the stream we can detour the above functions to read/seek from our buffer containing JPEG2000 data! We use [adobe_jp2k.py](adobe_jp2k.py) to read our JPEG2000 image and insert the bytes as an array in our [frida_harness.js](frida_harness.js) script. This script will attempt to emulate the above functions, e.g. for JP2KCodeStm::read:
 ```js
-var jp2kBytes = [<bytes from JPEG2000 image>];
+var jp2kBytes = ["...<bytes from JPEG2000 image>..."];
 ...
 case "?read@JP2KCodeStm@@QAEHPAEH@Z":
     Interceptor.replace(exports[i].address, new NativeCallback(function(outBuf, nCount) {
@@ -51,7 +51,7 @@ struct MemObjEx
 };
 ```
 At this point we write our C++ harness where we can (mostly) route the above methods to whatever heap we have available. Our final harness has the following high-level logic:
-```c++
+```cpp
 // Load our target library
 HINSTANCE JP2KLib = LoadLibrary(L"JP2KLib.dll");
 
